@@ -4,39 +4,79 @@ from django.db.models import Avg
 
 # Create your models here.
 
-# Represents a single ingredient in the inventory 
-class Ingredient(models.Model):
-    name = models.CharField(max_length=100)
-    quantity = models.DecimalField(max_digits=6, decimal_places=1)
-    unit = models.CharField(max_length=100)
-    unit_price = models.DecimalField(max_digits=6, decimal_places=2)
+# Represents an entry off the restaurant's menu
+class MenuItem(models.Model):
+    title = models.CharField(max_length=200, unique=True)
+    price = models.FloatField(default=0.00)
 
-# Represents entry on the menu for the restaurant
-class MenuItem(models.Model):                                       
-    title = models.CharField(max_length=300, unique=True)
-    price = models.DecimalField(max_digits=6, decimal_places=2)
+    def get_absolute_url(self):
+        return "/menu"
+    
+    def available(self):
+        return all(X.enough() for X in self.reciperequirement_set.all())
 
+    def __str__(self):
+        return f"title={self.title}; price={self.price}"
+    
+    # Rating metrics
     def average_rating(self) -> float:
         return Rating.objects.filter(post=self).aggregate(Avg("rating"))["rating__avg"] or 0
-    
+
     def __str__(self):
-        return f"{self.title}: {self.price}- {self.average_rating()}"
+        return f"{self.header}: {self.average_rating()}"
 
-# Represents an ingredient required for a recipe required for a Menu Item
-class RecipeRequirement(models.Model):
-    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
-    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    quantity = models.DecimalField(max_digits=6, decimal_places=2)
-
-# Represents a customer purchase of an item off the menu.
-class Purchase(models.Model):
-    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(auto_now_add=True)
-
-# A rating system for each of the the items on the menu
+# Rating model
 class Rating(models.Model):
-    item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     rating = models.IntegerField(default=0)
 
     def __str__(self):
         return f"{self.post.header}: {self.rating}"
+
+
+# Represents a single ingredient in the restaurant's inventory
+class Ingredient(models.Model):
+    name = models.CharField(max_length=200, unique=True)
+    quantity = models.FloatField(default=0)
+    unit = models.CharField(max_length=200)
+    price_per_unit = models.FloatField(default=0)
+
+    def get_absolute_url(self):
+        return "/ingredients"
+    
+
+    def __str__(self):
+        return f"""
+        name={self.name};
+        qty={self.quantity};
+        unit={self.unit};
+        unit_price={self.price_per_unit}
+        """
+
+
+# Represents an ingredient required for a recipe for a MenuItem
+class RecipeRequirement(models.Model):
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+    ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
+    quantity = models.FloatField(default=0)
+
+    def __str__(self):
+        return f"menu_item=[{self.menu_item.__str__()}]; ingredient={self.ingredient.name}; qty={self.quantity}"
+    
+    def get_absolute_url(self):
+        return "/menu"
+
+    def enough(self):
+        return self.quantity <= self.ingredient.quantity
+
+
+ #Represents a purchase off a MenuItem
+class Purchase(models.Model):
+    menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"menu_item=[{self.menu_item.__str__()}]; time={self.timestamp}"
+
+    def get_absolute_url(self):
+        return "/purchases"
