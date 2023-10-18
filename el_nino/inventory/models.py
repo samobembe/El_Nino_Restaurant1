@@ -1,5 +1,4 @@
 from django.db import models
-# from django.contrib.auth.admin import 
 from django.db.models import Avg
 
 # Create your models here.
@@ -7,7 +6,7 @@ from django.db.models import Avg
 # Represents an entry off the restaurant's menu
 class MenuItem(models.Model):
     title = models.CharField(max_length=200, unique=True)
-    price = models.FloatField(default=0.00)
+    price = models.DecimalField(max_digits=6, decimal_places=2)
 
     def get_absolute_url(self):
         return "/menu"
@@ -37,9 +36,9 @@ class Rating(models.Model):
 # Represents a single ingredient in the restaurant's inventory
 class Ingredient(models.Model):
     name = models.CharField(max_length=200, unique=True)
-    quantity = models.FloatField(default=0)
+    quantity = models.IntegerField(default=0)
     unit = models.CharField(max_length=200)
-    price_per_unit = models.FloatField(default=0)
+    price_per_unit = models.DecimalField(max_digits=6, decimal_places=2)
 
     def get_absolute_url(self):
         return "/ingredients"
@@ -58,7 +57,7 @@ class Ingredient(models.Model):
 class RecipeRequirement(models.Model):
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     ingredient = models.ForeignKey(Ingredient, on_delete=models.CASCADE)
-    quantity = models.FloatField(default=0)
+    quantity = models.IntegerField(default=0)
 
     def __str__(self):
         return f"menu_item=[{self.menu_item.__str__()}]; ingredient={self.ingredient.name}; qty={self.quantity}"
