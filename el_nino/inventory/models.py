@@ -70,7 +70,7 @@ class RecipeRequirement(models.Model):
         return self.quantity <= self.ingredient.quantity
 
 
- #Represents a purchase off a MenuItem
+#Represents a purchase off a MenuItem
 class Purchase(models.Model):
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
